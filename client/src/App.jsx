@@ -9,6 +9,7 @@ import Admin from './pages/Admin.jsx';
 import AdminLogin from './pages/AdminLogin.jsx';
 import ApplyAdmin from './pages/ApplyAdmin.jsx';
 import VerifyEmail from './pages/VerifyEmail.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
 import VerifyBanner from './components/VerifyBanner.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/apply-admin" element={<Protected><ApplyAdmin /></Protected>} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="*" element={<Navigate to="/" replace />} />
