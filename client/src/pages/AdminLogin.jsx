@@ -56,6 +56,10 @@ export default function AdminLogin() {
       />
       <button className="btn" type="submit" disabled={busy}>{busy ? 'Signing in...' : 'Sign in'}</button>
       {error && <div className="error">{error}</div>}
+      <div className="row between" style={{ marginTop: 4 }}>
+        <span></span>
+        <Link className="link" to="/forgot-password" state={{ from: '/admin/login' }}>Forgot password?</Link>
+      </div>
     </form>
   );
 }
