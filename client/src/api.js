@@ -39,6 +39,8 @@ export const api = {
   me: () => request('/auth/me', { auth: true }),
   verifyCode: (code) => request('/auth/verify-code', { method: 'POST', body: { code }, auth: true }),
   resendVerification: () => request('/auth/resend-verification', { method: 'POST', auth: true }),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (payload) => request('/auth/reset-password', { method: 'POST', body: payload }),
 
   listNetas: (params = {}) => {
     const qs = new URLSearchParams(params).toString();
