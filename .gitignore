@@ -8,4 +8,3 @@ build/
 .vscode/
 .idea/
 scraper/data/*.json
-server/public/photos/
