@@ -1,9 +1,14 @@
 require('dotenv').config();
+const dns = require('dns');
+// Render's outbound network is IPv4-only; without this, Node prefers IPv6 for
+// hosts that have AAAA records (e.g. smtp.gmail.com) and SMTP times out with
+// ENETUNREACH. Force IPv4 first globally.
+dns.setDefaultResultOrder('ipv4first');
 // Some restrictive DNS servers (e.g. campus networks) refuse SRV-record queries,
 // which breaks `mongodb+srv://` Atlas connections. Pre-empt that by routing
 // Node's resolver at public DNS when MONGO_URI uses SRV.
 if ((process.env.MONGO_URI || '').startsWith('mongodb+srv://')) {
-  require('dns').setServers(['8.8.8.8', '1.1.1.1']);
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
 }
 const path = require('path');
 const express = require('express');
