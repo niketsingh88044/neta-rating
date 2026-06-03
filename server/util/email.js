@@ -89,6 +89,25 @@ async function sendMail({ to, subject, text, html }) {
   return { mode: 'console' };
 }
 
+function resetEmail({ name, code }) {
+  const subject = `Your Neta Rating password reset code: ${code}`;
+  const text =
+    `Hi ${name},\n\n` +
+    `You requested a password reset. Your reset code is: ${code}\n\n` +
+    `Enter this code along with your new password on the reset screen. ` +
+    `The code expires in 15 minutes. If you didn't request this, you can safely ignore this message.`;
+  const html =
+    `<p>Hi ${escapeHtml(name)},</p>` +
+    `<p>You requested a password reset. Your reset code is:</p>` +
+    `<p style="font-size:2rem;letter-spacing:0.4rem;font-weight:700;margin:18px 0;` +
+    `background:#f3f4f6;padding:14px 20px;display:inline-block;border-radius:8px">` +
+    `${escapeHtml(code)}</p>` +
+    `<p>Enter this code along with your new password on the reset screen.</p>` +
+    `<p style="color:#666;font-size:0.9em">This code expires in 15 minutes. ` +
+    `If you didn't request a reset, you can safely ignore this message.</p>`;
+  return { subject, text, html };
+}
+
 function verificationEmail({ name, code }) {
   const subject = `Your Neta Rating verification code: ${code}`;
   const text =
@@ -114,4 +133,4 @@ function escapeHtml(s) {
   );
 }
 
-module.exports = { sendMail, verificationEmail };
+module.exports = { sendMail, verificationEmail, resetEmail };
