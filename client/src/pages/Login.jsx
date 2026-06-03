@@ -32,7 +32,10 @@ export default function Login() {
       <input className="input" type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       <button className="btn" type="submit">Login</button>
       {error && <div className="error">{error}</div>}
-      <div className="muted small">No account? <Link to="/signup">Sign up</Link></div>
+      <div className="row between" style={{ marginTop: 4 }}>
+        <span className="muted small">No account? <Link to="/signup">Sign up</Link></span>
+        <Link className="link" to="/forgot-password" state={{ from: '/login' }}>Forgot password?</Link>
+      </div>
     </form>
   );
 }
