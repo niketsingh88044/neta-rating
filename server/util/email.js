@@ -12,7 +12,9 @@ function init() {
       port: Number(SMTP_PORT),
       secure: Number(SMTP_PORT) === 465, // 465 = SMTPS; everything else uses STARTTLS
       auth: { user: SMTP_USER, pass: SMTP_PASS },
+      family: 4,
     });
+    
     transporterMode = 'smtp';
     console.log(`[email] SMTP configured: ${SMTP_HOST}:${SMTP_PORT}`);
   } else {
