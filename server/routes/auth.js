@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { requireAuth } = require('../middleware/auth');
-const { sendMail, verificationEmail } = require('../util/email');
+const { sendMail, verificationEmail, resetEmail } = require('../util/email');
 
 const router = express.Router();
 
@@ -120,5 +120,66 @@ router.post('/resend-verification', requireAuth, async (req, res) => {
   await issueAndSendVerification(user);
   res.json({ ok: true });
 });
+
+/* ---------- Password reset (forgot password) ---------- */
+
+const RESET_TTL_MS = 15 * 60 * 1000;
+
+async function issueAndSendResetCode(user) {
+  const code = newVerificationCode();
+  user.resetCode = code;
+  user.resetExpires = new Date(Date.now() + RESET_TTL_MS);
+  await user.save();
+  const { subject, text, html } = resetEmail({ name: user.name, code });
+  try {
+    await sendMail({ to: user.email, subject, text, html });
+  } catch (e) {
+    console.error('[auth] reset email send failed:', e.message);
+  }
+  return code;
+}
+
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().normalizeEmail()],
+  async (req, res) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) return res.status(400).json({ error: 'Enter a valid email.' });
+    const user = await User.findOne({ email: req.body.email });
+    // Always return 200 to avoid leaking which emails are registered.
+    if (user) await issueAndSendResetCode(user);
+    res.json({ ok: true });
+  }
+);
+
+router.post(
+  '/reset-password',
+  [
+    body('email').isEmail().normalizeEmail(),
+    body('code').isString().trim().matches(/^\d{6}$/),
+    body('newPassword').isString().isLength({ min: 6 }),
+  ],
+  async (req, res) => {
+    const errs = validationResult(req);
+    if (!errs.isEmpty()) return res.status(400).json({ error: 'Check email, 6-digit code, and password (min 6 chars).' });
+
+    const user = await User.findOne({ email: req.body.email });
+    if (!user || !user.resetCode || !user.resetExpires) {
+      return res.status(400).json({ error: 'No reset request found. Start over.' });
+    }
+    if (user.resetExpires.getTime() < Date.now()) {
+      return res.status(400).json({ error: 'This code has expired. Request a new one.' });
+    }
+    if (user.resetCode !== req.body.code.trim()) {
+      return res.status(400).json({ error: 'Incorrect code. Check the email and try again.' });
+    }
+
+    await user.setPassword(req.body.newPassword);
+    user.resetCode = null;
+    user.resetExpires = null;
+    await user.save();
+    res.json({ ok: true });
+  }
+);
 
 module.exports = router;
