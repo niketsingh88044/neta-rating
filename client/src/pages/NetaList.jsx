@@ -27,6 +27,12 @@ export default function NetaList() {
   const sort = params.get('sort') || 'top';
   const page = Math.max(1, parseInt(params.get('page') || '1', 10));
 
+  // Search input is controlled separately from the applied `q` so the user can
+  // type without re-fetching on every keystroke; we re-sync when `q` changes
+  // externally (e.g. when "Clear filters" runs).
+  const [searchInput, setSearchInput] = useState(q);
+  useEffect(() => { setSearchInput(q); }, [q]);
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
@@ -106,11 +112,30 @@ export default function NetaList() {
         <input
           className="input"
           placeholder="Search by name / party / constituency"
-          defaultValue={q}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') update({ q: e.target.value });
+            if (e.key === 'Enter') update({ q: searchInput.trim() });
           }}
         />
+        <button
+          type="button"
+          className="btn"
+          onClick={() => update({ q: searchInput.trim() })}
+          disabled={searchInput.trim() === q}
+        >
+          Search
+        </button>
+        {q && (
+          <button
+            type="button"
+            className="link"
+            onClick={() => { setSearchInput(''); update({ q: '' }); }}
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        )}
         <select className="input" value={sort} onChange={(e) => update({ sort: e.target.value })}>
           <option value="top">Top rated</option>
           <option value="new">Newest</option>
