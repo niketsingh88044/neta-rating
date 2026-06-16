@@ -52,6 +52,7 @@ export const api = {
 
   rate: (payload) => request('/ratings', { method: 'POST', body: payload, auth: true }),
   myRatings: () => request('/ratings/mine', { auth: true }),
+  removeRating: (id) => request(`/ratings/${id}`, { method: 'DELETE', auth: true }),
 
   admin: {
     create: (data) => request('/admin/netas', { method: 'POST', body: data, auth: true }),

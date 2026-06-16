@@ -8,6 +8,7 @@ import Signup from './pages/Signup.jsx';
 import Admin from './pages/Admin.jsx';
 import AdminLogin from './pages/AdminLogin.jsx';
 import ApplyAdmin from './pages/ApplyAdmin.jsx';
+import Profile from './pages/Profile.jsx';
 import VerifyEmail from './pages/VerifyEmail.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import VerifyBanner from './components/VerifyBanner.jsx';
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/admin" element={<AdminOnly><Admin /></AdminOnly>} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/apply-admin" element={<Protected><ApplyAdmin /></Protected>} />
+          <Route path="/profile" element={<Protected><Profile /></Protected>} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/login" element={<Login />} />

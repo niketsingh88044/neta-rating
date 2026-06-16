@@ -15,6 +15,7 @@ export default function Navbar() {
           {user && !user.isAdmin && <NavLink to="/apply-admin">Apply for admin</NavLink>}
           {user ? (
             <>
+              <NavLink to="/profile">Profile</NavLink>
               <span className="muted">Hi, {user.name}</span>
               <button className="link" onClick={() => { logout(); nav('/'); }}>Logout</button>
             </>

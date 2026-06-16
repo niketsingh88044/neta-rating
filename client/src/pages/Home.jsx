@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const CATEGORIES = [
   { key: 'MP', title: 'Members of Parliament', desc: 'Lok Sabha & Rajya Sabha' },
@@ -8,6 +9,7 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
+  const { user } = useAuth();
   return (
     <div>
       <section className="hero">
@@ -16,7 +18,12 @@ export default function Home() {
           Profile data sourced from <a href="https://myneta.info" target="_blank" rel="noreferrer">myneta.info</a>.
           Browse by category, read affidavit info, and rate the people who represent you.
         </p>
-        <Link to="/netas" className="btn">Browse all netas</Link>
+        <div className="row gap" style={{ marginTop: 12, flexWrap: 'wrap' }}>
+          <Link to="/netas" className="btn">Browse all netas</Link>
+          <Link to={user ? '/profile' : '/login'} className="btn btn-secondary">
+            {user ? 'My profile & review history' : 'Login to see your review history'}
+          </Link>
+        </div>
       </section>
 
       <section>
