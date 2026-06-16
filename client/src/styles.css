@@ -103,6 +103,11 @@ a:hover { text-decoration: underline; }
 }
 .btn:hover { background: var(--brand-dark); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary {
+  background: #fff; color: var(--brand-dark);
+  border: 1px solid var(--brand);
+}
+.btn-secondary:hover { background: var(--saffron-soft); }
 .link { background: none; border: 0; color: var(--brand-dark); cursor: pointer; padding: 0; font: inherit; }
 
 .input {
