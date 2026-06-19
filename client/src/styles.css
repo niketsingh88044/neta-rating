@@ -443,14 +443,79 @@ a:hover { text-decoration: underline; }
 .skel-w-50 { width: 50%; }
 .skel-w-70 { width: 70%; }
 
+/* ===== NetaList page ===== */
+.on-hero-list { padding: 40px 32px 36px; }
+.on-hero-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+  color: #111827; background: #fff; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.08); margin-bottom: 10px;
+}
+
+.on-search-row-list { grid-template-columns: 1.4fr 1fr auto; }
+.on-input-select {
+  padding: 4px 0; background: transparent; border: 0; cursor: pointer; width: 100%;
+}
+.on-input-select:focus { outline: none; }
+
+.on-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; margin: 18px 0 4px;
+}
+.on-toolbar-right { display: flex; align-items: center; gap: 8px; }
+.on-sort-label {
+  font-size: 0.85rem; color: var(--muted); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.on-sort-select {
+  background: #fff; border: 1px solid var(--border); border-radius: 999px;
+  padding: 8px 16px; font-weight: 700; color: #111827; width: auto; min-width: 140px;
+}
+
+.on-result-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 14px 0 10px; color: var(--muted); font-size: 0.9rem;
+}
+.on-result-bar strong { color: #111827; }
+
+/* ===== NetaCard tweaks ===== */
+.on-neta-card .on-card-photo {
+  height: 180px;
+  background: linear-gradient(135deg, #f5f5f4, #e7e5e4);
+}
+.on-card-photo img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.4); }
+.on-neta-card .on-card-party {
+  background: #fff; color: #111827;
+  font-size: 0.7rem; padding: 4px 10px; border-radius: 999px;
+  letter-spacing: 1px; font-weight: 800;
+}
+.on-card-MP .on-card-party { color: #1e40af; }
+.on-card-MLA .on-card-party { color: #92400e; }
+.on-card-STATE .on-card-party { color: var(--green-dark); }
+.on-card-DISTRICT .on-card-party { color: #9d174d; }
+.on-card-state { color: var(--muted); font-size: 0.85rem; }
+.on-card-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.on-mini-chip {
+  background: #f3f4f6; color: #374151; font-size: 0.72rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 6px;
+}
+.on-mini-chip-danger { background: #fee2e2; color: #991b1b; }
+.on-meta-party {
+  background: #111827; color: #fff;
+}
+
 @media (max-width: 880px) {
   .on-body { grid-template-columns: 1fr; }
   .on-sidebar { display: grid; grid-template-columns: 1fr 1fr; }
   .on-search-row { grid-template-columns: 1fr; }
+  .on-search-row-list { grid-template-columns: 1fr; }
   .on-search-actions { grid-column: 1 / -1; }
   .on-stat-row { grid-template-columns: 1fr; }
   .on-hero { padding: 40px 22px; }
   .on-hero-profile { padding: 32px 22px; }
+  .on-hero-list { padding: 32px 22px; }
+  .on-toolbar { flex-direction: column; align-items: stretch; }
+  .on-toolbar-right { justify-content: flex-end; }
 }
 
 .link { background: none; border: 0; color: var(--brand-dark); cursor: pointer; padding: 0; font: inherit; }

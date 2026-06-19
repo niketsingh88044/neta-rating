@@ -1,61 +1,64 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import StarRating from './StarRating.jsx';
-
-const CATEGORY_LABEL = {
-  MP: 'Member of Parliament',
-  MLA: 'Member of Legislative Assembly',
-  STATE: 'State Leader',
-  DISTRICT: 'District Leader',
-};
 
 function initials(name = '') {
   const parts = name.replace(/\(.*?\)/g, '').trim().split(/\s+/);
   return ((parts[0]?.[0] || '') + (parts[parts.length - 1]?.[0] || '')).toUpperCase();
 }
 
+function stars(value = 0) {
+  const v = Math.round(value);
+  return '★★★★★'.slice(0, v) + '☆☆☆☆☆'.slice(0, 5 - v);
+}
+
 export default function NetaCard({ neta }) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImg = neta.photoUrl && !imgFailed;
   return (
-    <Link to={`/netas/${neta._id}`} className="card neta-card">
-      <div className="neta-card-body">
-        <div className="avatar">
-          {showImg ? (
-            <img
-              src={neta.photoUrl}
-              alt={neta.name}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={() => setImgFailed(true)}
-            />
-          ) : (
-            <span className="avatar-initials">{initials(neta.name)}</span>
+    <Link to={`/netas/${neta._id}`} className={`on-card on-card-${neta.category} on-neta-card`}>
+      <div className="on-card-photo">
+        {showImg ? (
+          <img
+            src={neta.photoUrl}
+            alt={neta.name}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <div className="on-card-initials">{initials(neta.name)}</div>
+        )}
+        <div className="on-card-party">{neta.category}</div>
+        <svg className="on-card-wave" viewBox="0 0 320 90" preserveAspectRatio="none">
+          <path d="M0,40 C80,90 240,0 320,50 L320,90 L0,90 Z" />
+        </svg>
+      </div>
+      <div className="on-card-body">
+        <div className="on-card-meta">
+          {neta.constituency && (
+            <span className="on-meta-pill">
+              <span aria-hidden>&#128205;</span> {neta.constituency}
+            </span>
+          )}
+          {neta.party && (
+            <span className="on-meta-pill on-meta-party">{neta.party}</span>
           )}
         </div>
-        <div className="neta-card-info">
-          <div className="card-head">
-            <div className="card-title">{neta.name}</div>
-            <span className={`pill pill-${neta.category}`}>{neta.category}</span>
-          </div>
-          <div className="muted small">
-            {neta.party ? <strong>{neta.party}</strong> : null}
-            {neta.constituency ? ` · ${neta.constituency}` : ''}
-            {neta.state ? ` · ${neta.state}` : ''}
-          </div>
-          <div className="card-meta">
-            {neta.education && <span className="chip">{neta.education}</span>}
-            {neta.assets && <span className="chip">Assets: {neta.assets.replace(/Rs\s*/, '₹').split('~')[0].trim()}</span>}
-            {neta.criminalCases > 0 && (
-              <span className="chip chip-danger">{neta.criminalCases} criminal case{neta.criminalCases > 1 ? 's' : ''}</span>
-            )}
-          </div>
-          <div className="card-foot">
-            <StarRating value={neta.avgRating} readOnly size={16} />
-            <span className="muted small">
-              {neta.avgRating?.toFixed?.(1) || '0.0'} · {neta.ratingCount} rating{neta.ratingCount === 1 ? '' : 's'}
+        <div className="on-card-name on-card-link">{neta.name}</div>
+        {neta.state && <div className="on-card-state">{neta.state}</div>}
+        <div className="on-card-chips">
+          {neta.education && <span className="on-mini-chip">{neta.education}</span>}
+          {neta.criminalCases > 0 && (
+            <span className="on-mini-chip on-mini-chip-danger">
+              {neta.criminalCases} criminal case{neta.criminalCases > 1 ? 's' : ''}
             </span>
-          </div>
+          )}
+        </div>
+        <div className="on-card-rating">
+          <span className="on-stars" aria-hidden>{stars(neta.avgRating)}</span>
+          <span className="on-rating-num">
+            {neta.avgRating?.toFixed?.(1) || '0.0'} Rating
+          </span>
         </div>
       </div>
     </Link>
