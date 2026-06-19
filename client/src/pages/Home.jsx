@@ -12,41 +12,56 @@ export default function Home() {
   const { user } = useAuth();
   return (
     <div className="home fade-in">
-      <section className="hero hero-fancy">
-        <div className="hero-badge">
-          <span className="hero-dot" /> Live · powered by myneta.info
+      <section className="hero-flag">
+        <div className="flag-stripes" aria-hidden>
+          <div className="stripe stripe-saffron" />
+          <div className="stripe stripe-white">
+            <div className="chakra" />
+          </div>
+          <div className="stripe stripe-green" />
         </div>
-        <h1 className="hero-title">
-          Rate <span className="gradient-text">your representatives</span>.
-        </h1>
-        <p className="hero-sub">
-          Browse profiles by category, read affidavit info, and give the people who represent you
-          a star rating they earn.
-        </p>
-        <div className="hero-cta">
-          <Link to="/netas" className="btn btn-lg">Browse all netas <span aria-hidden>&rarr;</span></Link>
-          <Link to={user ? '/profile' : '/login'} className="btn btn-secondary btn-lg">
-            {user ? 'My profile & review history' : 'Login to see your reviews'}
-          </Link>
+
+        <div className="hero-content">
+          <div className="hero-tagline">For the people. By the people.</div>
+          <h1 className="hero-mega">
+            <span className="word word-1">RATE.</span>{' '}
+            <span className="word word-2">REVIEW.</span>{' '}
+            <span className="word word-3">REPRESENT.</span>
+          </h1>
+          <p className="hero-sub-big">
+            India's open scorecard for the people who represent you. Profile data from{' '}
+            <a href="https://myneta.info" target="_blank" rel="noreferrer">myneta.info</a>.
+          </p>
+          <div className="hero-cta">
+            <Link to="/netas" className="btn btn-lg btn-saffron">Browse all netas &rarr;</Link>
+            <Link to={user ? '/profile' : '/login'} className="btn btn-lg btn-green">
+              {user ? 'My review history' : 'Login to review'}
+            </Link>
+          </div>
         </div>
       </section>
 
       <section className="category-section">
         <div className="section-head">
-          <h2>Browse by category</h2>
+          <h2 className="section-title">Browse by category</h2>
           <Link to="/netas" className="link small">View all &rarr;</Link>
         </div>
-        <div className="grid">
+        <div className="cat-grid">
           {CATEGORIES.map((c, i) => (
             <Link
               key={c.key}
               to={`/netas?category=${c.key}`}
-              className={`card category-card cat-${c.key} pop-in`}
-              style={{ animationDelay: `${i * 60}ms` }}
+              className={`cat-tile cat-${c.key} pop-in`}
+              style={{ animationDelay: `${i * 70}ms` }}
             >
+              <div className="cat-tile-stripes" aria-hidden>
+                <span className="strip s1" />
+                <span className="strip s2" />
+                <span className="strip s3" />
+              </div>
               <div className="cat-icon" aria-hidden>{c.icon}</div>
-              <div className="card-title">{c.title}</div>
-              <div className="muted small">{c.desc}</div>
+              <div className="cat-tile-title">{c.title}</div>
+              <div className="cat-tile-desc">{c.desc}</div>
               <div className="cat-cta">Explore &rarr;</div>
             </Link>
           ))}

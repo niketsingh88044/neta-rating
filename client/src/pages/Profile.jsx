@@ -68,13 +68,21 @@ export default function Profile() {
 
   return (
     <div className="profile-page fade-in">
-      <section className="profile-header card">
-        <div className="profile-identity">
-          <div className="profile-avatar" aria-hidden>{initials(user.name)}</div>
-          <div>
+      <section className="profile-banner">
+        <div className="banner-stripes" aria-hidden>
+          <div className="b-stripe b-saffron" />
+          <div className="b-stripe b-white"><div className="chakra chakra-sm" /></div>
+          <div className="b-stripe b-green" />
+        </div>
+        <div className="banner-body">
+          <div className="profile-avatar-wrap">
+            <div className="profile-avatar-ring" aria-hidden />
+            <div className="profile-avatar">{initials(user.name)}</div>
+          </div>
+          <div className="banner-info">
             <h1 className="profile-name">{user.name}</h1>
-            <div className="muted small">{user.email}</div>
-            <div className="row gap" style={{ marginTop: 8 }}>
+            <div className="profile-email">{user.email}</div>
+            <div className="profile-pills">
               {user.isAdmin && <span className="pill pill-MP">ADMIN</span>}
               <span className={`pill ${user.emailVerified ? 'pill-STATE' : 'pill-DISTRICT'}`}>
                 {user.emailVerified ? 'EMAIL VERIFIED' : 'EMAIL NOT VERIFIED'}
@@ -82,38 +90,37 @@ export default function Profile() {
             </div>
           </div>
         </div>
-        <div className="profile-stats">
-          <div className="stat stat-pop">
-            <div className="stat-num">{stats.total}</div>
-            <div className="muted small">{stats.total === 1 ? 'review' : 'reviews'}</div>
-          </div>
-          <div className="stat stat-pop">
-            <div className="stat-num">{stats.total ? stats.avg.toFixed(1) : '—'}</div>
-            <div className="muted small">avg score</div>
-          </div>
-          <div className="stat stat-pop">
-            <div className="stat-num">{stats.topCat || '—'}</div>
-            <div className="muted small">top category</div>
-          </div>
+      </section>
+
+      <section className="stat-strip">
+        <div className="stat-tile stat-saffron stat-pop">
+          <div className="stat-num">{stats.total}</div>
+          <div className="stat-label">{stats.total === 1 ? 'review shared' : 'reviews shared'}</div>
+        </div>
+        <div className="stat-tile stat-white stat-pop">
+          <div className="stat-num">{stats.total ? stats.avg.toFixed(1) : '—'}</div>
+          <div className="stat-label">avg score given</div>
+        </div>
+        <div className="stat-tile stat-green stat-pop">
+          <div className="stat-num">{stats.topCat || '—'}</div>
+          <div className="stat-label">top category</div>
         </div>
       </section>
 
       <section className="history-section">
         <div className="section-head">
-          <h2>Review history</h2>
+          <h2 className="section-title">Review history</h2>
           {!!ratings.length && (
-            <div className="row gap" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
-              <div className="tabs">
-                {SORTS.map((s) => (
-                  <button
-                    key={s.key}
-                    className={`tab ${sort === s.key ? 'active' : ''}`}
-                    onClick={() => setSort(s.key)}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
+            <div className="bold-tabs">
+              {SORTS.map((s) => (
+                <button
+                  key={s.key}
+                  className={`bold-tab ${sort === s.key ? 'active' : ''}`}
+                  onClick={() => setSort(s.key)}
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -121,18 +128,18 @@ export default function Profile() {
         {categories.length > 1 && (
           <div className="filter-row">
             <button
-              className={`chip-btn ${categoryFilter === 'ALL' ? 'active' : ''}`}
+              className={`big-pill ${categoryFilter === 'ALL' ? 'active' : ''}`}
               onClick={() => setCategoryFilter('ALL')}
             >
-              All <span className="chip-count">{stats.total}</span>
+              All <span className="big-pill-count">{stats.total}</span>
             </button>
             {categories.map((c) => (
               <button
                 key={c}
-                className={`chip-btn pill-${c} ${categoryFilter === c ? 'active' : ''}`}
+                className={`big-pill big-pill-${c} ${categoryFilter === c ? 'active' : ''}`}
                 onClick={() => setCategoryFilter(c)}
               >
-                {c} <span className="chip-count">{stats.byCat[c]}</span>
+                #{c} <span className="big-pill-count">{stats.byCat[c]}</span>
               </button>
             ))}
           </div>
@@ -141,7 +148,7 @@ export default function Profile() {
         {loading && (
           <div className="rating-history">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rating-row card skeleton-row">
+              <div key={i} className="review-card skeleton-row">
                 <div className="skel skel-line skel-w-50" />
                 <div className="skel skel-line skel-w-30" />
                 <div className="skel skel-line skel-w-70" />
@@ -151,11 +158,11 @@ export default function Profile() {
         )}
         {err && <div className="error">{err}</div>}
         {!loading && !err && ratings.length === 0 && (
-          <div className="empty-state card">
-            <div className="empty-icon" aria-hidden>&#9734;</div>
+          <div className="empty-state">
+            <div className="empty-chakra chakra" aria-hidden />
             <h3>No reviews yet</h3>
-            <p className="muted">Every star helps others decide. Pick a neta and share your honest take.</p>
-            <Link to="/netas" className="btn">Browse netas</Link>
+            <p>Every star helps others decide. Pick a neta and share your honest take.</p>
+            <Link to="/netas" className="btn btn-lg btn-saffron">Browse netas</Link>
           </div>
         )}
         {!loading && !err && ratings.length > 0 && visible.length === 0 && (
@@ -169,34 +176,45 @@ export default function Profile() {
             {visible.map((r, i) => (
               <article
                 key={r._id}
-                className="rating-row card hover-lift pop-in"
-                style={{ animationDelay: `${i * 40}ms` }}
+                className="review-card pop-in"
+                style={{ animationDelay: `${i * 50}ms` }}
               >
-                <div className="rating-row-head">
-                  <div className="rating-row-left">
-                    {r.neta ? (
-                      <Link to={`/netas/${r.neta._id}`} className="card-title rating-row-title">
-                        {r.neta.name}
-                      </Link>
-                    ) : (
-                      <span className="card-title muted">(neta removed)</span>
-                    )}
-                    {r.neta?.category && (
-                      <span className={`pill pill-${r.neta.category}`}>{r.neta.category}</span>
-                    )}
-                  </div>
-                  <div className={`score-badge score-${r.score}`}>
-                    <span className="score-num">{r.score}</span>
-                    <span className="score-of">/5</span>
-                  </div>
+                <div className="review-flag" aria-hidden>
+                  <span /><span /><span />
                 </div>
-                <div className="rating-row-stars">
-                  <StarRating value={r.score} readOnly />
-                </div>
-                {r.comment && <p className="rating-row-comment">"{r.comment}"</p>}
-                <div className="rating-row-foot">
-                  <span className="muted small">Rated {fmt(r.updatedAt || r.createdAt)}</span>
-                  <button className="link danger" onClick={() => remove(r)}>Remove rating</button>
+                <div className="review-body">
+                  <div className="review-head">
+                    <div className="review-head-left">
+                      {r.neta ? (
+                        <Link to={`/netas/${r.neta._id}`} className="review-title">
+                          {r.neta.name}
+                        </Link>
+                      ) : (
+                        <span className="review-title muted">(neta removed)</span>
+                      )}
+                      {r.neta?.category && (
+                        <span className={`pill pill-${r.neta.category}`}>{r.neta.category}</span>
+                      )}
+                    </div>
+                    <div className={`score-badge score-${r.score}`}>
+                      <span className="score-num">{r.score}</span>
+                      <span className="score-of">/5</span>
+                    </div>
+                  </div>
+                  <div className="review-stars">
+                    <StarRating value={r.score} readOnly />
+                  </div>
+                  {r.comment && (
+                    <blockquote className="review-quote">
+                      <span className="quote-mark" aria-hidden>&ldquo;</span>
+                      {r.comment}
+                      <span className="quote-mark" aria-hidden>&rdquo;</span>
+                    </blockquote>
+                  )}
+                  <div className="review-foot">
+                    <span className="muted small">Rated {fmt(r.updatedAt || r.createdAt)}</span>
+                    <button className="link danger" onClick={() => remove(r)}>Remove rating</button>
+                  </div>
                 </div>
               </article>
             ))}
