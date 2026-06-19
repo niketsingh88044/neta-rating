@@ -568,6 +568,58 @@ a:hover { text-decoration: underline; }
 
 .skel-hero { height: 320px; border-radius: 22px; }
 
+/* ===== Editorial review + AI panel ===== */
+.on-editorial {
+  background: #fff; border: 1px solid var(--border); border-radius: 16px;
+  padding: 20px 22px; margin-bottom: 18px; position: relative;
+}
+.on-editorial::before {
+  content: ''; position: absolute; left: 0; top: 16px; bottom: 16px;
+  width: 4px; background: var(--brand); border-radius: 0 4px 4px 0;
+}
+.on-editorial-head {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.on-editorial-head .on-section-title { margin: 0; padding-bottom: 6px; }
+.on-editorial-body p { margin: 0 0 10px; color: #1f2937; line-height: 1.6; }
+.on-editorial-body p:last-of-type { margin-bottom: 0; }
+.on-editorial-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px; flex-wrap: wrap; margin-top: 12px;
+  padding-top: 12px; border-top: 1px dashed var(--border);
+}
+.on-editorial-tag {
+  display: inline-block; background: var(--saffron-soft); color: var(--brand-dark);
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;
+  padding: 3px 10px; border-radius: 999px;
+}
+
+.on-btn-sm { padding: 8px 14px; font-size: 0.85rem; }
+
+.on-ai-panel {
+  background: linear-gradient(180deg, #fff, #fffaf2);
+  border: 2px solid var(--brand); border-radius: 16px;
+  padding: 22px 24px; margin-bottom: 18px;
+}
+.on-ai-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  margin-bottom: 6px;
+}
+.on-ai-head h3 {
+  margin: 0; font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem; color: #111827;
+}
+.on-ai-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+.on-ai-textarea {
+  width: 100%; font-size: 0.95rem; line-height: 1.55;
+  min-height: 220px; margin-top: 4px;
+}
+.on-ai-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 14px; gap: 12px; flex-wrap: wrap;
+}
+
 /* ===== NetaList page ===== */
 .on-hero-list { padding: 40px 32px 36px; }
 .on-hero-eyebrow {

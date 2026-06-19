@@ -7,9 +7,38 @@ const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { localizePhoto } = require('../util/localizePhoto');
 
 const scraperLib = require('../util/scraperLib');
+const { generateReview, buildPrompt } = require('../util/openai');
 
 const router = express.Router();
 router.use(requireAuth, requireAdmin);
+
+/* ---------- AI editorial review ---------- */
+
+router.post('/netas/:id/ai-review', async (req, res) => {
+  const neta = await Neta.findById(req.params.id);
+  if (!neta) return res.status(404).json({ error: 'Not found' });
+  try {
+    const { text, model } = await generateReview(buildPrompt(neta));
+    res.json({ review: text, model });
+  } catch (e) {
+    res.status(e.status || 500).json({ error: e.message || 'AI review failed' });
+  }
+});
+
+router.put('/netas/:id/editorial-review', async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  const source = req.body?.source === 'ai' ? 'ai' : 'admin';
+  const neta = await Neta.findById(req.params.id);
+  if (!neta) return res.status(404).json({ error: 'Not found' });
+  neta.editorialReview = {
+    text,
+    updatedAt: new Date(),
+    updatedBy: req.userId,
+    source: text ? source : '',
+  };
+  await neta.save();
+  res.json({ editorialReview: neta.editorialReview });
+});
 
 const VALID_CATEGORIES = ['MP', 'MLA', 'STATE', 'DISTRICT'];
 

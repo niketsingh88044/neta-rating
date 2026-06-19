@@ -27,6 +27,12 @@ const netaSchema = new mongoose.Schema(
     photoUrl: String,
     avgRating: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    editorialReview: {
+      text: { type: String, default: '' },
+      updatedAt: Date,
+      updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      source: { type: String, enum: ['ai', 'admin', ''], default: '' },
+    },
   },
   { timestamps: true }
 );

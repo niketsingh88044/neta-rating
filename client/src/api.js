@@ -60,6 +60,8 @@ export const api = {
     remove: (id) => request(`/admin/netas/${id}`, { method: 'DELETE', auth: true }),
     scrapeImport: (data) => request('/admin/scrape-import', { method: 'POST', body: data, auth: true }),
     scrapeCandidate: (detailUrl) => request('/admin/scrape-candidate', { method: 'POST', body: { detailUrl }, auth: true }),
+    aiReview: (netaId) => request(`/admin/netas/${netaId}/ai-review`, { method: 'POST', auth: true }),
+    saveEditorialReview: (netaId, payload) => request(`/admin/netas/${netaId}/editorial-review`, { method: 'PUT', body: payload, auth: true }),
     listApplications: (status = 'pending') => request(`/admin-applications?status=${encodeURIComponent(status)}`, { auth: true }),
     approveApplication: (id, note = '') => request(`/admin-applications/${id}/approve`, { method: 'POST', body: { note }, auth: true }),
     rejectApplication: (id, note = '') => request(`/admin-applications/${id}/reject`, { method: 'POST', body: { note }, auth: true }),
