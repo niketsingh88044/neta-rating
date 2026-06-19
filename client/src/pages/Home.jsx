@@ -1,72 +1,178 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const CATEGORIES = [
-  { key: 'MP', title: 'Members of Parliament', desc: 'Lok Sabha & Rajya Sabha', icon: '\u{1F3DB}' },
-  { key: 'MLA', title: 'MLAs', desc: 'State legislative assemblies', icon: '\u{1F5F3}' },
-  { key: 'STATE', title: 'State Leaders', desc: 'CMs, state office-bearers', icon: '\u{1F3F0}' },
-  { key: 'DISTRICT', title: 'District Leaders', desc: 'Mayors, district representatives', icon: '\u{1F3D9}' },
+  { key: 'MP', title: 'Member of Parliament', icon: '\u{1F3DB}' },
+  { key: 'MLA', title: 'Legislative Assembly', icon: '\u{1F5F3}' },
+  { key: 'STATE', title: 'State Leader', icon: '\u{1F3F0}' },
+  { key: 'DISTRICT', title: 'District Leader', icon: '\u{1F3D9}' },
 ];
+
+const GENDERS = ['Male', 'Female', 'Other'];
 
 export default function Home() {
   const { user } = useAuth();
-  return (
-    <div className="home fade-in">
-      <section className="hero-flag">
-        <div className="flag-stripes" aria-hidden>
-          <div className="stripe stripe-saffron" />
-          <div className="stripe stripe-white">
-            <div className="chakra" />
-          </div>
-          <div className="stripe stripe-green" />
-        </div>
+  const nav = useNavigate();
+  const [name, setName] = useState('');
+  const [constituency, setConstituency] = useState('');
+  const [category, setCategory] = useState('');
+  const [gender, setGender] = useState('');
 
-        <div className="hero-content">
-          <div className="hero-tagline">For the people. By the people.</div>
-          <h1 className="hero-mega">
-            <span className="word word-1">RATE.</span>{' '}
-            <span className="word word-2">REVIEW.</span>{' '}
-            <span className="word word-3">REPRESENT.</span>
+  function onSearch(e) {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (name) params.set('q', name);
+    if (constituency) params.set('constituency', constituency);
+    if (category) params.set('category', category);
+    if (gender) params.set('gender', gender);
+    nav(`/netas${params.toString() ? `?${params}` : ''}`);
+  }
+
+  function onReset() {
+    setName(''); setConstituency(''); setCategory(''); setGender('');
+  }
+
+  return (
+    <div className="home-on fade-in">
+      <section className="on-hero">
+        <div className="on-hero-inner">
+          <h1 className="on-hero-title">
+            Evaluate the profile of your{' '}
+            <span className="on-hero-emph">Neta by reviews, ratings and case history</span>
           </h1>
-          <p className="hero-sub-big">
-            India's open scorecard for the people who represent you. Profile data from{' '}
+          <p className="on-hero-sub">
+            Profile data sourced from{' '}
             <a href="https://myneta.info" target="_blank" rel="noreferrer">myneta.info</a>.
+            Browse, read affidavits, and rate the people who represent you.
           </p>
-          <div className="hero-cta">
-            <Link to="/netas" className="btn btn-lg btn-saffron">Browse all netas &rarr;</Link>
-            <Link to={user ? '/profile' : '/login'} className="btn btn-lg btn-green">
-              {user ? 'My review history' : 'Login to review'}
+          {user && (
+            <Link to="/profile" className="on-profile-btn">
+              <span className="on-profile-avatar">{initials(user.name)}</span>
+              <span className="on-profile-text">
+                <span className="on-profile-label">Welcome back,</span>
+                <span className="on-profile-name">{user.name} &rarr; My reviews</span>
+              </span>
             </Link>
-          </div>
+          )}
         </div>
+        <div className="on-hero-faces" aria-hidden />
       </section>
 
-      <section className="category-section">
-        <div className="section-head">
-          <h2 className="section-title">Browse by category</h2>
-          <Link to="/netas" className="link small">View all &rarr;</Link>
+      <form className="on-search" onSubmit={onSearch}>
+        <div className="on-search-row">
+          <div className="on-field">
+            <label className="on-field-label">
+              <span className="on-icon" aria-hidden>&#128100;</span>
+              <span>Neta Name</span>
+            </label>
+            <input
+              className="on-input"
+              placeholder="Enter Neta Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="on-field">
+            <label className="on-field-label">
+              <span className="on-icon" aria-hidden>&#127960;</span>
+              <span>Constituency</span>
+            </label>
+            <input
+              className="on-input"
+              placeholder="Select Constituency"
+              value={constituency}
+              onChange={(e) => setConstituency(e.target.value)}
+            />
+          </div>
+          <div className="on-search-actions">
+            <button type="submit" className="on-btn-dark">
+              <span aria-hidden>&#128269;</span> Search
+            </button>
+            <button type="button" className="on-btn-light" onClick={onReset}>
+              <span aria-hidden>&#8634;</span> Reset
+            </button>
+          </div>
         </div>
-        <div className="cat-grid">
+      </form>
+
+      <section className="on-body">
+        <aside className="on-sidebar">
+          <div className="on-side-card">
+            <h3 className="on-side-title">Gender</h3>
+            <div className="on-side-list">
+              {GENDERS.map((g) => (
+                <label key={g} className="on-radio">
+                  <input
+                    type="radio"
+                    name="gender"
+                    checked={gender === g}
+                    onChange={() => setGender(g)}
+                  />
+                  <span className="on-radio-dot" />
+                  <span>{g}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="on-side-card">
+            <h3 className="on-side-title">Neta Category</h3>
+            <div className="on-side-list">
+              {CATEGORIES.map((c) => (
+                <label key={c.key} className="on-radio">
+                  <input
+                    type="radio"
+                    name="category"
+                    checked={category === c.key}
+                    onChange={() => setCategory(c.key)}
+                  />
+                  <span className="on-radio-dot" />
+                  <span>{c.key}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <div className="on-grid">
           {CATEGORIES.map((c, i) => (
             <Link
               key={c.key}
               to={`/netas?category=${c.key}`}
-              className={`cat-tile cat-${c.key} pop-in`}
-              style={{ animationDelay: `${i * 70}ms` }}
+              className={`on-card on-card-${c.key} pop-in`}
+              style={{ animationDelay: `${i * 60}ms` }}
             >
-              <div className="cat-tile-stripes" aria-hidden>
-                <span className="strip s1" />
-                <span className="strip s2" />
-                <span className="strip s3" />
+              <div className="on-card-photo">
+                <div className="on-card-icon">{c.icon}</div>
+                <div className="on-card-party" aria-hidden>&#9733;</div>
+                <svg className="on-card-wave" viewBox="0 0 320 90" preserveAspectRatio="none">
+                  <path d="M0,40 C80,90 240,0 320,50 L320,90 L0,90 Z" />
+                </svg>
               </div>
-              <div className="cat-icon" aria-hidden>{c.icon}</div>
-              <div className="cat-tile-title">{c.title}</div>
-              <div className="cat-tile-desc">{c.desc}</div>
-              <div className="cat-cta">Explore &rarr;</div>
+              <div className="on-card-body">
+                <div className="on-card-meta">
+                  <span className="on-meta-pill"><span aria-hidden>&#128205;</span> All India</span>
+                  <span className="on-meta-pill"><span aria-hidden>&#127963;</span> {c.key}</span>
+                </div>
+                <div className="on-card-name">{c.title}</div>
+                <div className="on-card-rating">
+                  <span className="on-stars" aria-hidden>{'★★★★☆'}</span>
+                  <span className="on-rating-num">4.1 Rating</span>
+                </div>
+              </div>
             </Link>
           ))}
         </div>
       </section>
     </div>
   );
+}
+
+function initials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] || '';
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
 }
