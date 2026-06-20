@@ -38,7 +38,13 @@ async function generateWithGemini(prompt) {
   const body = {
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.5, maxOutputTokens: 800 },
+    generationConfig: {
+      temperature: 0.5,
+      maxOutputTokens: 2048,
+      // Gemini 2.5 models burn output tokens on internal "thinking" by default,
+      // which can leave nothing for actual text. Disable it for this summary task.
+      thinkingConfig: { thinkingBudget: 0 },
+    },
     // Politician profiles with criminal cases trigger civic/safety filters by default.
     // Relax to the most permissive setting available on the free tier.
     safetySettings: [
