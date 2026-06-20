@@ -79,12 +79,13 @@ async function generateWithGemini(prompt) {
   const candidate = data?.candidates?.[0];
   const text = candidate?.content?.parts?.map((p) => p.text).filter(Boolean).join('').trim();
   if (!text) {
-    // Surface why Gemini gave nothing back: safety, recitation, max tokens, etc.
+    // Log the full response server-side so we can diagnose why Gemini returned nothing.
+    try { console.warn('[gemini] empty response:', JSON.stringify(data).slice(0, 1500)); } catch {}
     const finish = candidate?.finishReason || data?.promptFeedback?.blockReason || 'EMPTY';
     const msg =
       finish === 'SAFETY' || finish === 'PROHIBITED_CONTENT'
         ? 'Gemini blocked this profile under its safety filters (often happens with criminal-case data). Try writing the review manually, or switch to OpenAI.'
-        : `Gemini returned no text (finishReason: ${finish}).`;
+        : `Gemini returned no text (finishReason: ${finish}). Check Render logs for details.`;
     const err = new Error(msg);
     err.status = 502;
     throw err;
