@@ -108,7 +108,7 @@ async function generateWithOpenAI(prompt) {
       { role: 'user', content: prompt },
     ],
     temperature: 0.5,
-    max_tokens: 600,
+    max_tokens: 1200,
   };
 
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -119,16 +119,27 @@ async function generateWithOpenAI(prompt) {
     },
     body: JSON.stringify(body),
   });
-  const data = await res.json().catch(() => ({}));
+  const raw = await res.text();
+  let data = {};
+  try { data = raw ? JSON.parse(raw) : {}; } catch {}
+  console.log(`[openai] model=${model} status=${res.status} bodyLen=${raw.length}`);
   if (!res.ok) {
+    console.warn('[openai] error body:', raw.slice(0, 2000));
     const msg = data?.error?.message || `OpenAI HTTP ${res.status}`;
     const err = new Error(msg);
     err.status = 502;
     throw err;
   }
-  const text = data?.choices?.[0]?.message?.content?.trim();
+  const choice = data?.choices?.[0];
+  const text = choice?.message?.content?.trim();
   if (!text) {
-    const err = new Error('OpenAI returned an empty response.');
+    console.warn('[openai] empty response raw:', raw.slice(0, 2000));
+    const finish = choice?.finish_reason || 'EMPTY';
+    const msg =
+      finish === 'content_filter'
+        ? 'OpenAI blocked this profile under its content policy. Write the review manually or edit the profile data and retry.'
+        : `OpenAI returned no text (finish_reason: ${finish}). Check Render logs for the raw response.`;
+    const err = new Error(msg);
     err.status = 502;
     throw err;
   }
