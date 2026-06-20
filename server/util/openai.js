@@ -39,6 +39,14 @@ async function generateWithGemini(prompt) {
     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.5, maxOutputTokens: 800 },
+    // Politician profiles with criminal cases trigger civic/safety filters by default.
+    // Relax to the most permissive setting available on the free tier.
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+    ],
   };
 
   let res, data;
@@ -62,9 +70,16 @@ async function generateWithGemini(prompt) {
     throw err;
   }
 
-  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim();
+  const candidate = data?.candidates?.[0];
+  const text = candidate?.content?.parts?.map((p) => p.text).filter(Boolean).join('').trim();
   if (!text) {
-    const err = new Error('Gemini returned an empty response.');
+    // Surface why Gemini gave nothing back: safety, recitation, max tokens, etc.
+    const finish = candidate?.finishReason || data?.promptFeedback?.blockReason || 'EMPTY';
+    const msg =
+      finish === 'SAFETY' || finish === 'PROHIBITED_CONTENT'
+        ? 'Gemini blocked this profile under its safety filters (often happens with criminal-case data). Try writing the review manually, or switch to OpenAI.'
+        : `Gemini returned no text (finishReason: ${finish}).`;
+    const err = new Error(msg);
     err.status = 502;
     throw err;
   }
