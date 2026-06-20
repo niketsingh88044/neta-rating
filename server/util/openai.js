@@ -32,7 +32,7 @@ async function generateReview(prompt) {
 
 async function generateWithGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const body = {
@@ -41,18 +41,27 @@ async function generateWithGemini(prompt) {
     generationConfig: { temperature: 0.5, maxOutputTokens: 800 },
   };
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg = data?.error?.message || `Gemini HTTP ${res.status}`;
-    const err = new Error(msg);
+  let res, data;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    data = await res.json().catch(() => ({}));
+    if (res.ok) break;
+    // One quick retry on 429 — free tier is 15 req/min; brief pause often resolves.
+    if (res.status === 429 && attempt === 0) {
+      await new Promise((r) => setTimeout(r, 4000));
+      continue;
+    }
+    const reason = data?.error?.status ? ` (${data.error.status})` : '';
+    const detail = data?.error?.message || `HTTP ${res.status}`;
+    const err = new Error(`Gemini${reason}: ${detail}`);
     err.status = 502;
     throw err;
   }
+
   const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim();
   if (!text) {
     const err = new Error('Gemini returned an empty response.');
