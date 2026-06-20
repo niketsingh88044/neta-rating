@@ -59,7 +59,7 @@ async function generateWithGemini(prompt) {
   for (let attempt = 0; attempt < 2; attempt++) {
     res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept-Encoding': 'identity' },
       body: JSON.stringify(body),
     });
     raw = await res.text();
@@ -115,6 +115,7 @@ async function generateWithOpenAI(prompt) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept-Encoding': 'identity',
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
