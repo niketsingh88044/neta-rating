@@ -55,32 +55,36 @@ async function generateWithGemini(prompt) {
     ],
   };
 
-  let res, data;
+  let res, raw = '', data = {};
   for (let attempt = 0; attempt < 2; attempt++) {
     res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    data = await res.json().catch(() => ({}));
-    if (res.ok) break;
-    // One quick retry on 429 — free tier is 15 req/min; brief pause often resolves.
+    raw = await res.text();
+    try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
+    console.log(`[gemini] model=${model} status=${res.status} bodyLen=${raw.length}`);
+    if (res.ok && data?.candidates?.length) break;
     if (res.status === 429 && attempt === 0) {
       await new Promise((r) => setTimeout(r, 4000));
       continue;
     }
-    const reason = data?.error?.status ? ` (${data.error.status})` : '';
-    const detail = data?.error?.message || `HTTP ${res.status}`;
-    const err = new Error(`Gemini${reason}: ${detail}`);
-    err.status = 502;
-    throw err;
+    if (!res.ok) {
+      console.warn('[gemini] error body:', raw.slice(0, 2000));
+      const reason = data?.error?.status ? ` (${data.error.status})` : '';
+      const detail = data?.error?.message || `HTTP ${res.status}`;
+      const err = new Error(`Gemini${reason}: ${detail}`);
+      err.status = 502;
+      throw err;
+    }
+    break;
   }
 
   const candidate = data?.candidates?.[0];
   const text = candidate?.content?.parts?.map((p) => p.text).filter(Boolean).join('').trim();
   if (!text) {
-    // Log the full response server-side so we can diagnose why Gemini returned nothing.
-    try { console.warn('[gemini] empty response:', JSON.stringify(data).slice(0, 1500)); } catch {}
+    console.warn('[gemini] empty response raw:', raw.slice(0, 2000));
     const finish = candidate?.finishReason || data?.promptFeedback?.blockReason || 'EMPTY';
     const msg =
       finish === 'SAFETY' || finish === 'PROHIBITED_CONTENT'
