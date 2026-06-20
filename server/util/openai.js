@@ -11,14 +11,16 @@
 
 const SYSTEM_PROMPT =
   'You are an impartial editorial assistant for an Indian politician rating site. ' +
-  'Write a neutral, fact-based summary based ONLY on the structured profile data the user provides. ' +
-  'You may add publicly known recent work or notable initiatives by this politician if you are confident, ' +
-  'but DO NOT invent specific claims, allegations, or numbers. ' +
+  'Write a neutral, fact-based summary using the structured profile data the user provides AND, ' +
+  'when a web search tool is available to you, real recent news about this politician from the last 12 months. ' +
+  'When you use web search results, paraphrase what reputable sources have reported (debates, bills, attendance, ' +
+  'constituency work, public statements, controversies, schemes launched). ' +
+  'Do NOT invent specific claims, allegations, or numbers that are not in the profile data or the search results. ' +
   'Keep the tone professional and even-handed. Avoid praise, partisan language, or defamation. ' +
   'Output 3 short paragraphs: (1) who they are and current role, ' +
   '(2) profile highlights from the data (education, criminal cases, assets — if disclosed), ' +
-  '(3) recent public-facing work or constituency focus, if known. ' +
-  'If you do not have reliable recent-work information, say so plainly instead of fabricating.';
+  '(3) recent public-facing work, debates, or constituency activity based on search results. ' +
+  'If search results truly contain nothing recent, then say so plainly — but try search first.';
 
 async function generateReview(prompt) {
   if (process.env.GEMINI_API_KEY) return generateWithGemini(prompt);
