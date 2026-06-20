@@ -41,12 +41,11 @@ async function generateWithGemini(prompt) {
     generationConfig: {
       temperature: 0.5,
       maxOutputTokens: 2048,
-      // Gemini 2.5 models burn output tokens on internal "thinking" by default,
-      // which can leave nothing for actual text. Disable it for this summary task.
       thinkingConfig: { thinkingBudget: 0 },
     },
-    // Politician profiles with criminal cases trigger civic/safety filters by default.
-    // Relax to the most permissive setting available on the free tier.
+    // Live Google Search — lets the model ground the third paragraph on real
+    // recent news / constituency activity instead of guessing.
+    tools: [{ google_search: {} }],
     safetySettings: [
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
