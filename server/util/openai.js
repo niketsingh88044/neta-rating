@@ -1,35 +1,75 @@
 /**
- * Tiny OpenAI Chat Completions client. Uses global fetch (Node 18+).
+ * LLM client for the AI editorial review feature.
+ * Prefers free Gemini if GEMINI_API_KEY is set, falls back to OpenAI.
  *
  * Env:
- *   OPENAI_API_KEY   required
+ *   GEMINI_API_KEY   optional — get free from aistudio.google.com/apikey
+ *   GEMINI_MODEL     optional, defaults to gemini-2.0-flash
+ *   OPENAI_API_KEY   optional — falls back to this if no Gemini key
  *   OPENAI_MODEL     optional, defaults to gpt-4o-mini
  */
+
+const SYSTEM_PROMPT =
+  'You are an impartial editorial assistant for an Indian politician rating site. ' +
+  'Write a neutral, fact-based summary based ONLY on the structured profile data the user provides. ' +
+  'You may add publicly known recent work or notable initiatives by this politician if you are confident, ' +
+  'but DO NOT invent specific claims, allegations, or numbers. ' +
+  'Keep the tone professional and even-handed. Avoid praise, partisan language, or defamation. ' +
+  'Output 3 short paragraphs: (1) who they are and current role, ' +
+  '(2) profile highlights from the data (education, criminal cases, assets — if disclosed), ' +
+  '(3) recent public-facing work or constituency focus, if known. ' +
+  'If you do not have reliable recent-work information, say so plainly instead of fabricating.';
+
 async function generateReview(prompt) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    const err = new Error('OPENAI_API_KEY is not configured on the server.');
-    err.status = 503;
+  if (process.env.GEMINI_API_KEY) return generateWithGemini(prompt);
+  if (process.env.OPENAI_API_KEY) return generateWithOpenAI(prompt);
+  const err = new Error(
+    'No LLM API key configured. Set GEMINI_API_KEY (free) or OPENAI_API_KEY on the server.'
+  );
+  err.status = 503;
+  throw err;
+}
+
+async function generateWithGemini(prompt) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const body = {
+    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.5, maxOutputTokens: 800 },
+  };
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data?.error?.message || `Gemini HTTP ${res.status}`;
+    const err = new Error(msg);
+    err.status = 502;
     throw err;
   }
+  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim();
+  if (!text) {
+    const err = new Error('Gemini returned an empty response.');
+    err.status = 502;
+    throw err;
+  }
+  return { text, model };
+}
+
+async function generateWithOpenAI(prompt) {
+  const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
   const body = {
     model,
     messages: [
-      {
-        role: 'system',
-        content:
-          'You are an impartial editorial assistant for an Indian politician rating site. ' +
-          'Write a neutral, fact-based summary based ONLY on the structured profile data the user provides. ' +
-          'You may add publicly known recent work or notable initiatives by this politician if you are confident, ' +
-          'but DO NOT invent specific claims, allegations, or numbers. ' +
-          'Keep the tone professional and even-handed. Avoid praise, partisan language, or defamation. ' +
-          'Output 3 short paragraphs: (1) who they are and current role, ' +
-          '(2) profile highlights from the data (education, criminal cases, assets — if disclosed), ' +
-          "(3) recent public-facing work or constituency focus, if known. " +
-          'If you do not have reliable recent-work information, say so plainly instead of fabricating.',
-      },
+      { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: prompt },
     ],
     temperature: 0.5,
@@ -44,12 +84,11 @@ async function generateReview(prompt) {
     },
     body: JSON.stringify(body),
   });
-
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = data?.error?.message || `OpenAI HTTP ${res.status}`;
     const err = new Error(msg);
-    err.status = res.status === 401 ? 502 : 502;
+    err.status = 502;
     throw err;
   }
   const text = data?.choices?.[0]?.message?.content?.trim();
