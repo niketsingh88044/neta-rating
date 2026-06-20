@@ -32,7 +32,7 @@ async function generateReview(prompt) {
 
 async function generateWithGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const body = {
