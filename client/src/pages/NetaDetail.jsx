@@ -9,6 +9,14 @@ function initials(name = '') {
   return ((parts[0]?.[0] || '') + (parts[parts.length - 1]?.[0] || '')).toUpperCase();
 }
 
+function shortUrl(u = '') {
+  try {
+    const { hostname, pathname } = new URL(u);
+    const tail = pathname.length > 32 ? pathname.slice(0, 32) + '…' : pathname;
+    return hostname.replace(/^www\./, '') + tail;
+  } catch { return u; }
+}
+
 const CATEGORY_LABEL = {
   MP: 'Member of Parliament',
   MLA: 'Member of Legislative Assembly',
@@ -32,6 +40,7 @@ export default function NetaDetail() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiText, setAiText] = useState('');
   const [aiSource, setAiSource] = useState('admin');
+  const [aiSources, setAiSources] = useState([]);
   const [aiErr, setAiErr] = useState('');
   const [aiSaving, setAiSaving] = useState(false);
   const [aiSaved, setAiSaved] = useState('');
@@ -71,15 +80,17 @@ export default function NetaDetail() {
     setAiErr(''); setAiSaved('');
     setAiText(neta?.editorialReview?.text || '');
     setAiSource(neta?.editorialReview?.source || 'admin');
+    setAiSources([]);
     setAiOpen(true);
   }
 
   async function generateReview() {
     setAiErr(''); setAiSaved(''); setAiLoading(true);
     try {
-      const { review } = await api.admin.aiReview(id);
+      const { review, sources } = await api.admin.aiReview(id);
       setAiText(review);
       setAiSource('ai');
+      setAiSources(Array.isArray(sources) ? sources : []);
     } catch (e) {
       setAiErr(e.message);
     } finally {
@@ -198,11 +209,11 @@ export default function NetaDetail() {
             <button className="on-back" onClick={() => setAiOpen(false)}>Close</button>
           </div>
           <p className="muted small">
-            The AI uses this neta's profile data and may add publicly known context. Always read carefully and edit before publishing — you are responsible for what gets saved.
+            The AI uses this neta's profile data plus recent web search results. Always read carefully and edit before publishing — you are responsible for what gets saved.
           </p>
           <div className="on-ai-actions">
             <button className="on-btn-dark" onClick={generateReview} disabled={aiLoading}>
-              {aiLoading ? 'Generating…' : (aiText ? 'Regenerate' : 'Generate review')}
+              {aiLoading ? 'Searching & generating…' : (aiText ? 'Regenerate' : 'Generate review')}
             </button>
             {aiText && (
               <span className="on-editorial-tag">
@@ -211,6 +222,18 @@ export default function NetaDetail() {
             )}
           </div>
           {aiErr && <div className="error">{aiErr}</div>}
+          {aiSources.length > 0 && (
+            <div className="on-ai-sources">
+              <div className="on-ai-sources-label">Web sources used:</div>
+              <ol>
+                {aiSources.map((u, i) => (
+                  <li key={i}>
+                    <a href={u} target="_blank" rel="noreferrer">{shortUrl(u)}</a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
           <textarea
             className="on-textarea on-ai-textarea"
             rows={12}

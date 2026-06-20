@@ -620,6 +620,18 @@ a:hover { text-decoration: underline; }
   margin-top: 14px; gap: 12px; flex-wrap: wrap;
 }
 
+.on-ai-sources {
+  background: #fff; border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 16px; margin: 10px 0;
+}
+.on-ai-sources-label {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--muted); margin-bottom: 6px;
+}
+.on-ai-sources ol { margin: 0; padding-left: 20px; }
+.on-ai-sources li { font-size: 0.85rem; line-height: 1.5; word-break: break-all; }
+.on-ai-sources a { color: var(--brand-dark); font-weight: 600; }
+
 /* ===== NetaList page ===== */
 .on-hero-list { padding: 40px 32px 36px; }
 .on-hero-eyebrow {

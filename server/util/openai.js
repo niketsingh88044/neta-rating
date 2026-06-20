@@ -1,36 +1,142 @@
 /**
  * LLM client for the AI editorial review feature.
- * Prefers free Gemini if GEMINI_API_KEY is set, falls back to OpenAI.
+ * Calls Tavily (if configured) to fetch recent web context, then asks the LLM
+ * to write a 3-paragraph editorial summary.
  *
  * Env:
- *   GEMINI_API_KEY   optional — get free from aistudio.google.com/apikey
+ *   TAVILY_API_KEY   optional — free 1000 searches/month at tavily.com
+ *   GEMINI_API_KEY   optional — preferred LLM if set
  *   GEMINI_MODEL     optional, defaults to gemini-2.0-flash
- *   OPENAI_API_KEY   optional — falls back to this if no Gemini key
+ *   OPENAI_API_KEY   optional — fallback LLM
  *   OPENAI_MODEL     optional, defaults to gpt-4o-mini
  */
 
 const SYSTEM_PROMPT =
   'You are an impartial editorial assistant for an Indian politician rating site. ' +
-  'Write a neutral, fact-based summary using the structured profile data the user provides AND, ' +
-  'when a web search tool is available to you, real recent news about this politician from the last 12 months. ' +
-  'When you use web search results, paraphrase what reputable sources have reported (debates, bills, attendance, ' +
+  'Write a neutral, fact-based summary using the structured profile data AND the recent news snippets provided. ' +
+  'When you cite recent activity, paraphrase what the news snippets actually say (debates, bills, attendance, ' +
   'constituency work, public statements, controversies, schemes launched). ' +
-  'Do NOT invent specific claims, allegations, or numbers that are not in the profile data or the search results. ' +
+  'Do NOT invent specific claims, allegations, or numbers that are not in the profile data or the news snippets. ' +
   'Keep the tone professional and even-handed. Avoid praise, partisan language, or defamation. ' +
   'Output 3 short paragraphs: (1) who they are and current role, ' +
   '(2) profile highlights from the data (education, criminal cases, assets — if disclosed), ' +
-  '(3) recent public-facing work, debates, or constituency activity based on search results. ' +
-  'If search results truly contain nothing recent, then say so plainly — but try search first.';
+  '(3) recent public-facing work, debates, or constituency activity grounded in the provided news snippets. ' +
+  'If the news snippets contain nothing recent, then say so plainly.';
 
-async function generateReview(prompt) {
-  if (process.env.GEMINI_API_KEY) return generateWithGemini(prompt);
-  if (process.env.OPENAI_API_KEY) return generateWithOpenAI(prompt);
-  const err = new Error(
-    'No LLM API key configured. Set GEMINI_API_KEY (free) or OPENAI_API_KEY on the server.'
-  );
-  err.status = 503;
-  throw err;
+/* ---------------- Tavily web search ---------------- */
+
+async function searchRecentNews(neta) {
+  const apiKey = process.env.TAVILY_API_KEY;
+  if (!apiKey) return null;
+
+  const queryParts = [neta.name];
+  if (neta.constituency) queryParts.push(neta.constituency);
+  if (neta.party) queryParts.push(neta.party);
+  queryParts.push('India politician recent news');
+  const query = queryParts.join(' ');
+
+  try {
+    const res = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept-Encoding': 'identity',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        query,
+        max_results: 5,
+        search_depth: 'basic',
+        topic: 'news',
+        days: 365,
+        include_answer: false,
+      }),
+    });
+    const raw = await res.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch {}
+    console.log(`[tavily] status=${res.status} results=${data?.results?.length || 0}`);
+    if (!res.ok) {
+      console.warn('[tavily] error body:', raw.slice(0, 1000));
+      return null;
+    }
+    return Array.isArray(data?.results) ? data.results : null;
+  } catch (e) {
+    console.warn('[tavily] failed:', e.message);
+    return null;
+  }
 }
+
+/* ---------------- Prompt building ---------------- */
+
+function buildProfileBlock(neta) {
+  const lines = [];
+  lines.push(`Name: ${neta.name}`);
+  if (neta.category) lines.push(`Role: ${neta.category}`);
+  if (neta.party || neta.partyFull) lines.push(`Party: ${neta.partyFull || neta.party}`);
+  if (neta.constituency) lines.push(`Constituency: ${neta.constituency}`);
+  if (neta.state) lines.push(`State: ${neta.state}`);
+  if (neta.election) lines.push(`Election: ${neta.election}`);
+  if (neta.age != null) lines.push(`Age: ${neta.age}`);
+  if (neta.education) {
+    lines.push(`Education: ${neta.education}${neta.educationDetails ? ` (${neta.educationDetails})` : ''}`);
+  }
+  if (neta.selfProfession) lines.push(`Self profession: ${neta.selfProfession}`);
+  if (neta.spouseProfession) lines.push(`Spouse profession: ${neta.spouseProfession}`);
+  if (neta.assets) lines.push(`Declared assets: ${neta.assets}`);
+  if (neta.liabilities) lines.push(`Declared liabilities: ${neta.liabilities}`);
+  if (neta.criminalCases != null) {
+    const extras = [];
+    if (neta.pendingCases) extras.push(`${neta.pendingCases} pending`);
+    if (neta.convictedCases) extras.push(`${neta.convictedCases} convicted`);
+    lines.push(`Criminal cases: ${neta.criminalCases}${extras.length ? ` (${extras.join(', ')})` : ''}`);
+  }
+  if (neta.sourceUrl) lines.push(`Affidavit source: ${neta.sourceUrl}`);
+  return lines.join('\n');
+}
+
+function buildNewsBlock(results) {
+  if (!results || !results.length) {
+    return 'Recent news snippets: (none — say recent-work information was not available)';
+  }
+  const items = results.map((r, i) => {
+    const content = (r.content || '').replace(/\s+/g, ' ').slice(0, 400);
+    return `[${i + 1}] ${r.title || 'Untitled'}\n   ${content}\n   Source: ${r.url || ''}`;
+  });
+  return 'Recent news snippets (use these to write paragraph 3):\n' + items.join('\n\n');
+}
+
+function buildPrompt(neta, searchResults) {
+  return (
+    `Profile data:\n${buildProfileBlock(neta)}\n\n` +
+    `${buildNewsBlock(searchResults)}\n\n` +
+    `Write a 3-paragraph editorial summary for this politician's page.`
+  );
+}
+
+/* ---------------- LLM dispatch ---------------- */
+
+async function generateReview(neta) {
+  const searchResults = await searchRecentNews(neta);
+  const prompt = buildPrompt(neta, searchResults);
+
+  let result;
+  if (process.env.GEMINI_API_KEY) {
+    result = await generateWithGemini(prompt);
+  } else if (process.env.OPENAI_API_KEY) {
+    result = await generateWithOpenAI(prompt);
+  } else {
+    const err = new Error(
+      'No LLM API key configured. Set GEMINI_API_KEY or OPENAI_API_KEY on the server.'
+    );
+    err.status = 503;
+    throw err;
+  }
+
+  return { ...result, sources: searchResults?.map((r) => r.url).filter(Boolean) || [] };
+}
+
+/* ---------------- Gemini ---------------- */
 
 async function generateWithGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -45,9 +151,6 @@ async function generateWithGemini(prompt) {
       maxOutputTokens: 2048,
       thinkingConfig: { thinkingBudget: 0 },
     },
-    // Live Google Search — lets the model ground the third paragraph on real
-    // recent news / constituency activity instead of guessing.
-    tools: [{ google_search: {} }],
     safetySettings: [
       { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
       { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
@@ -89,7 +192,7 @@ async function generateWithGemini(prompt) {
     const finish = candidate?.finishReason || data?.promptFeedback?.blockReason || 'EMPTY';
     const msg =
       finish === 'SAFETY' || finish === 'PROHIBITED_CONTENT'
-        ? 'Gemini blocked this profile under its safety filters (often happens with criminal-case data). Try writing the review manually, or switch to OpenAI.'
+        ? 'Gemini blocked this profile under its safety filters. Try writing the review manually, or switch to OpenAI.'
         : `Gemini returned no text (finishReason: ${finish}). Check Render logs for details.`;
     const err = new Error(msg);
     err.status = 502;
@@ -97,6 +200,8 @@ async function generateWithGemini(prompt) {
   }
   return { text, model };
 }
+
+/* ---------------- OpenAI ---------------- */
 
 async function generateWithOpenAI(prompt) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -148,35 +253,4 @@ async function generateWithOpenAI(prompt) {
   return { text, model };
 }
 
-function buildPrompt(neta) {
-  const lines = [];
-  lines.push(`Name: ${neta.name}`);
-  if (neta.category) lines.push(`Role: ${neta.category}`);
-  if (neta.party || neta.partyFull) lines.push(`Party: ${neta.partyFull || neta.party}`);
-  if (neta.constituency) lines.push(`Constituency: ${neta.constituency}`);
-  if (neta.state) lines.push(`State: ${neta.state}`);
-  if (neta.election) lines.push(`Election: ${neta.election}`);
-  if (neta.age != null) lines.push(`Age: ${neta.age}`);
-  if (neta.education) {
-    lines.push(`Education: ${neta.education}${neta.educationDetails ? ` (${neta.educationDetails})` : ''}`);
-  }
-  if (neta.selfProfession) lines.push(`Self profession: ${neta.selfProfession}`);
-  if (neta.spouseProfession) lines.push(`Spouse profession: ${neta.spouseProfession}`);
-  if (neta.assets) lines.push(`Declared assets: ${neta.assets}`);
-  if (neta.liabilities) lines.push(`Declared liabilities: ${neta.liabilities}`);
-  if (neta.criminalCases != null) {
-    const extras = [];
-    if (neta.pendingCases) extras.push(`${neta.pendingCases} pending`);
-    if (neta.convictedCases) extras.push(`${neta.convictedCases} convicted`);
-    lines.push(`Criminal cases: ${neta.criminalCases}${extras.length ? ` (${extras.join(', ')})` : ''}`);
-  }
-  if (neta.sourceUrl) lines.push(`Affidavit source: ${neta.sourceUrl}`);
-
-  return (
-    `Profile data:\n${lines.join('\n')}\n\n` +
-    `Write a 3-paragraph editorial summary for this politician's page. ` +
-    `If you know publicly reported recent work, debates, or constituency initiatives, mention them briefly in the third paragraph — otherwise say recent-work information was not available.`
-  );
-}
-
-module.exports = { generateReview, buildPrompt };
+module.exports = { generateReview };
